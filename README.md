@@ -1,7 +1,7 @@
 # ncw-http-client
 Not (A) Curl Wrapper HTTP Client for C++17
 
-Yet another HTTP Client implementation of mine with interface resembling Python Requests.
+Yet another HTTP Client implementation of mine with interface taking after Python Requests.
 
 ## Sample
 
@@ -10,12 +10,9 @@ Yet another HTTP Client implementation of mine with interface resembling Python 
 
 int main(int argc, char** argv) {
     ncw::Response response = ncw::request("google.com", ncw::Method::get);
-    std::cout << response.status_code << std::endl;
-    // 200
-    std::cout << response.headers["Content-Type"] << std::endl;
-    // "text/html; charset=ISO-8859-1"
-    std::cout << response.data << std::endl;
-    // "<!doctype html><html itemscope="" ..."
+    std::cout << response.status_code << std::endl;                     // 200
+    std::cout << response.headers["Content-Type"] << std::endl;         // "text/html; charset=ISO-8859-1"
+    std::cout << response.data << std::endl;                            // "<!doctype html><html itemscope="" ..."
 
 }
 ```
@@ -33,7 +30,7 @@ int main(int argc, char** argv) {
 ## Planned featurs
 
 - PUT, DELETE methods
-- URL encoding POST data and URL parameters
+- URL encoding POST and GET parameters
 - Basic Auth
 - Cookies
 - Session with more robust interface
