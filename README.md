@@ -1,7 +1,9 @@
 # ncw-http-client
 Not (A) Curl Wrapper HTTP Client for C++17
 
-Yet another HTTP Client implementation of mine with interface taking after Python Requests.
+Yet another HTTP Client implementation of mine with interface taking after Python Requests. But it's not a libcurl wrapper.
+
+**Why shouldn't I just use [C++ Requests](https://github.com/libcpr/cpr)?** `ncw` introduces minimum number of new types allowing for simple, fast but powerful usage - all for C++17 code. Because of that, it's as dependency-less as it can, so that it doesn't need to conform with design/API of library it's wrapping.
 
 ## Sample
 
