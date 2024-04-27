@@ -148,7 +148,6 @@ namespace ncw {
 	    fcntl(fd, F_SETFL, O_NONBLOCK);
 	    do {
 		if(poll_event(fd, timeout, POLLIN)) {
-		    std::cout << b_off << "/" << buffer.capacity() << std::endl;
 		    if((recvd = recv(fd, &buffer[b_off], http::recv_offset, 0)) == 0) {
 			throw std::runtime_error("Peer closed connection");
 		    } else if(recvd == -1) {
@@ -156,9 +155,9 @@ namespace ncw {
 			else throw std::runtime_error(strerror(errno));
 		    }
 		    b_off += recvd;
+		    string = std::string(buffer.begin(), buffer.end());
+		    buffer.resize(buffer.size() + recvd);
 		}
-		string = std::string(buffer.begin(), buffer.end());
-	    	buffer.reserve(buffer.capacity() + http::recv_offset);
 	    } while(string.find(terminator) == std::string::npos);
 	    const int flags = fcntl(fd, F_GETFL, 0);
 	    fcntl(fd, F_SETFL, flags^O_NONBLOCK);
@@ -227,12 +226,27 @@ namespace ncw {
 	    return std::make_pair(data, false);
 	}
 
+	static std::string parse_chunks(std::string& data) {
+	    size_t pos {0};
+	    std::string string{};
+	    while((pos = data.find(http::newline)) != std::string::npos) {
+		std::string in_str = data.substr(0, pos);
+		try {
+		    std::stoll(in_str, nullptr, 16);
+		} catch(std::invalid_argument const& e) {
+		    string += in_str;
+		}
+		data.erase(0, pos+http::newline.length());
+	    }
+	    return string;
+	}
+
 	static std::string get_data_in_chunks(int fd, int timeout, const std::string& response) {
 	    auto [data, read_whole] = read_all_from_buf(response);
 	    if(read_whole) return data;
-	    std::cout << "chunks" << std::endl;
 	    data += recv_until_terminator(fd, std::string(http::chunk_terminator), timeout);
-	    return data;
+	    data.shrink_to_fit();
+	    return parse_chunks(data);
 	}
 
 	Response Request::read_response(int fd) {
@@ -256,14 +270,27 @@ namespace ncw {
 	}
     }
 
-    Response request(const std::string& url,
-		    const Method method,
-		    const std::string& data,
-		    const std::map<std::string, std::string>& headers,
-		    const bool follow_redirects,
-		    const uint64_t timeout) {
+    const Response request(const std::string& url,
+	    const Method method,
+	    const std::string& data,
+	    const std::map<std::string, std::string>& headers,
+	    const bool follow_redirects,
+	    const uint64_t timeout) {
 	if(follow_redirects) {
-
+	    Response inner_response {};
+	    bool redirect = false;
+	    std::string inner_url = url;
+	    do {
+		inner_response = inner::Request{inner_url, method, data, headers, timeout}.perform();
+		if(inner_response.status_code >= 300 && inner_response.status_code <= 308) {
+		    if(auto location = inner_response.headers.find("Location");
+			    location != inner_response.headers.end()) {
+			inner_url = location->second;
+			redirect = true;
+		    }
+		} else redirect = false;
+	    } while(redirect);
+	    return inner_response;
 	}
 	return inner::Request{url, method, data, headers, timeout}.perform();
     }

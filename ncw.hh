@@ -25,9 +25,9 @@ namespace ncw {
     };
 
     struct Response {
-	const std::string data;
-	const uint16_t status_code;
-	const std::map<std::string, std::string> headers;
+	std::string data;
+	uint16_t status_code;
+	std::map<std::string, std::string> headers;
     };
 
     namespace inner {
@@ -66,12 +66,13 @@ namespace ncw {
     }
 
 
-    Response request(const std::string& url,
-		    const Method method = Method::get,
-		    const std::string& data = {},
-		    const std::map<std::string, std::string>& headers = {},
-		    const bool follow_redirects = true,
-		    const uint64_t timeout = 60);
+    const Response request(const std::string& url,
+	    const Method method = Method::get,
+	    const std::string& data = {},
+	    const std::map<std::string, std::string>& headers = {},
+	    const bool follow_redirects = true,
+	    const uint64_t timeout = 60);
+
 }
 
 #endif
