@@ -51,20 +51,15 @@ namespace ncw {
 
 	void Request::send_request() {
 	    std::string message;
-	    message += parse_method(this->method)
-		+ " " + this->url.query
-		+ " HTTP/1.1" + std::string(http::newline);
+	    message += parse_method(this->method) + " " + this->url.query + " HTTP/1.1" + std::string(http::newline);
 	    message += "Host: " + this->url.hostname + std::string(http::newline);
 	    message += "User-Agent: " + std::string(http::user_agent) + std::string(http::newline);
-	    if(!this->headers.empty()) {
-		for(const auto& header: headers) {
+
+	    if(!this->headers.empty())
+		for(const auto& header: headers)
 		    message += header.first + ": " + header.second + std::string(http::newline);
-		}
-	    }
-	    if(this->method != Method::head
-		    && this->method != Method::delete_
-		    && this->method != Method::options
-		    && !this->data.empty()) {
+
+	    if(this->method != Method::head && this->method != Method::delete_ && this->method != Method::options && !this->data.empty()) {
 		message += "Content-Length: " + std::to_string(this->data.size()) + std::string(http::terminator);
 		message += this->data + std::string(http::newline);
 	    }
@@ -128,8 +123,8 @@ namespace ncw {
 	    std::map<std::string, std::string> headers;
 	    uint16_t status_code;
 	    size_t nl{0};
-	    while(true) {
-		size_t nnl {response.find(http::newline, nl)};
+	    size_t nnl{0};
+	    while((nnl = response.find(http::newline, nl)) != std::string::npos) {
 		size_t len {nnl-nl};
 		if(len == 0) break;
 		auto line = response.substr(nl, len);
@@ -137,8 +132,7 @@ namespace ncw {
 		if((sep = line.find(':')) != std::string::npos) {
 		    std::string key = line.substr(0,sep);
 		    std::string val = line.substr(sep+2);
-		    std::transform(key.begin(), key.end(), key.begin(),
-			    [](char c){return std::tolower(c);});
+		    std::transform(key.begin(), key.end(), key.begin(), [](char c){return std::tolower(c);});
 		    headers[key] = val;
 		} else 
 		    status_code = get_status_code(line);
@@ -182,8 +176,7 @@ namespace ncw {
 	    long long len = next-end;
 	    if(size-len <= 0 || len <= 0) {
 		size_t terminator = data.find(http::chunk_terminator);
-		if(terminator == std::string::npos)
-		    return std::make_pair(data, false);
+		if(terminator == std::string::npos) return std::make_pair(data, false);
 		return std::make_pair(data.substr(end, size-len), true);
 	    }
 	    return std::make_pair(data, false);
@@ -216,7 +209,8 @@ namespace ncw {
 	    auto response = recv_until_terminator(std::string(http::terminator));
 	    auto [headers, status] = parse_headers_status(response);
 	    if(status == 0) throw std::runtime_error("No HTTP status code found");
-	    if(this->method == Method::head) return Response{"", status, headers};
+	    if(this->method == Method::head && this->method == Method::options)
+		return Response{"", status, headers};
 	    std::string data;
 	    if(headers.find("Transfer-Encoding") != headers.end())
 		data = get_data_in_chunks(response);
