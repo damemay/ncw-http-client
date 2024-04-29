@@ -1,7 +1,5 @@
 #include "ncw.hh"
-#include <algorithm>
 #include <cassert>
-#include <cctype>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
@@ -124,6 +122,7 @@ namespace ncw {
 	    uint16_t status_code;
 	    size_t nl{0};
 	    size_t nnl{0};
+	    size_t len{0};
 	    while((nnl = response.find(http::newline, nl)) != std::string::npos) {
 		size_t len {nnl-nl};
 		if(len == 0) break;
@@ -132,7 +131,7 @@ namespace ncw {
 		if((sep = line.find(':')) != std::string::npos) {
 		    std::string key = line.substr(0,sep);
 		    std::string val = line.substr(sep+2);
-		    std::transform(key.begin(), key.end(), key.begin(), [](char c){return std::tolower(c);});
+		    for(auto& c : key) c = std::tolower(c);
 		    headers[key] = val;
 		} else 
 		    status_code = get_status_code(line);
@@ -209,13 +208,13 @@ namespace ncw {
 	    auto response = recv_until_terminator(std::string(http::terminator));
 	    auto [headers, status] = parse_headers_status(response);
 	    if(status == 0) throw std::runtime_error("No HTTP status code found");
-	    if(this->method == Method::head && this->method == Method::options)
+	    if(this->method == Method::head || this->method == Method::options)
 		return Response{"", status, headers};
 	    std::string data;
-	    if(headers.find("Transfer-Encoding") != headers.end())
+	    if(headers.find("transfer-encoding") != headers.end())
 		data = get_data_in_chunks(response);
-	    else if(headers.find("Content-Length") != headers.end())
-		data = get_data_with_content_length(response, headers.at("Content-Length"));
+	    else if(headers.find("content-length") != headers.end())
+		data = get_data_with_content_length(response, headers.at("content-length"));
 	    return Response{data, status, headers};
 	};
 
