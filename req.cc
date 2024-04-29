@@ -1,5 +1,7 @@
 #include "ncw.hh"
+#include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
@@ -132,9 +134,13 @@ namespace ncw {
 		if(len == 0) break;
 		auto line = response.substr(nl, len);
 		size_t sep{0};
-		if((sep = line.find(':')) != std::string::npos)
-		    headers[line.substr(0,sep)] = line.substr(sep+2);
-		else 
+		if((sep = line.find(':')) != std::string::npos) {
+		    std::string key = line.substr(0,sep);
+		    std::string val = line.substr(sep+2);
+		    std::transform(key.begin(), key.end(), key.begin(),
+			    [](char c){return std::tolower(c);});
+		    headers[key] = val;
+		} else 
 		    status_code = get_status_code(line);
 		nl = nnl+2;
 	    };
