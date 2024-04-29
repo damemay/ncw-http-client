@@ -19,9 +19,13 @@ namespace ncw {
 
 	static std::string parse_method(Method method) {
 	    switch(method) {
-		case Method::get:   return "GET"; break;
-		case Method::head:  return "HEAD"; break;
-		case Method::post:  return "POST"; break;
+		case Method::get:	return "GET"; break;
+		case Method::head:  	return "HEAD"; break;
+		case Method::post:  	return "POST"; break;
+		case Method::put:   	return "PUT"; break;
+		case Method::patch:   	return "PATCH"; break;
+		case Method::delete_:   return "DELETE"; break;
+		case Method::options:   return "OPTIONS"; break;
 	    }
 	}
 
@@ -55,7 +59,10 @@ namespace ncw {
 		    message += header.first + ": " + header.second + std::string(http::newline);
 		}
 	    }
-	    if(this->method != Method::head && !this->data.empty()) {
+	    if(this->method != Method::head
+		    && this->method != Method::delete_
+		    && this->method != Method::options
+		    && !this->data.empty()) {
 		message += "Content-Length: " + std::to_string(this->data.size()) + std::string(http::terminator);
 		message += this->data + std::string(http::newline);
 	    }

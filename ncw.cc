@@ -43,7 +43,7 @@ namespace ncw {
     }
 
     namespace single {
-	const Response get(const std::string& url,
+	const Response GET(const std::string& url,
     	        const std::string& data,
     	        const std::map<std::string, std::string>& headers,
     	        const bool follow_redirects,
@@ -51,21 +51,51 @@ namespace ncw {
     	    return request(url, inner::Method::get, data, headers, follow_redirects, timeout);
     	}
 
-    	const Response head(const std::string& url,
-    	        const std::string& data,
+    	const Response HEAD(const std::string& url,
     	        const std::map<std::string, std::string>& headers,
     	        const bool follow_redirects,
     	        const uint64_t timeout) {
-    	    return request(url, inner::Method::head, data, headers, follow_redirects, timeout);
+    	    return request(url, inner::Method::head, {}, headers, follow_redirects, timeout);
     	}
 
-    	const Response post(const std::string& url,
+    	const Response POST(const std::string& url,
     	        const std::string& data,
     	        const std::map<std::string, std::string>& headers,
     	        const bool follow_redirects,
     	        const uint64_t timeout) {
     	    return request(url, inner::Method::post, data, headers, follow_redirects, timeout);
     	}
+
+        const Response PUT(const std::string& url,
+		const std::string& data,
+    	    	const std::map<std::string, std::string>& headers,
+    	    	const bool follow_redirects,
+    	    	const uint64_t timeout) {
+    	    return request(url, inner::Method::put, data, headers, follow_redirects, timeout);
+	}
+
+        const Response PATCH(const std::string& url,
+		const std::string& data,
+    	    	const std::map<std::string, std::string>& headers,
+    	    	const bool follow_redirects,
+    	    	const uint64_t timeout) {
+    	    return request(url, inner::Method::patch, data, headers, follow_redirects, timeout);
+	}
+
+        const Response DELETE(const std::string& url,
+		const std::string& data,
+    	    	const std::map<std::string, std::string>& headers,
+    	    	const bool follow_redirects,
+    	    	const uint64_t timeout) {
+	    return request(url, inner::Method::delete_, data, headers, follow_redirects, timeout);
+	}
+
+        const Response OPTIONS(const std::string& url,
+		const std::map<std::string, std::string>& headers,
+    	    	const bool follow_redirects,
+    	    	const uint64_t timeout) {
+    	    return request(url, inner::Method::options, {}, headers, follow_redirects, timeout);
+	}
     }
 
 }

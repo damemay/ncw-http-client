@@ -31,6 +31,10 @@ namespace ncw {
     	    get,
     	    head,
     	    post,
+	    put,
+	    patch,
+	    delete_,
+	    options,
     	};
 
 	struct Url {
@@ -99,20 +103,42 @@ namespace ncw {
     }
 
     namespace single {
-        const Response get(const std::string& url,
+        const Response GET(const std::string& url,
     	    const std::string& data = {},
     	    const std::map<std::string, std::string>& headers = {},
     	    const bool follow_redirects = true,
     	    const uint64_t timeout = 60);
     
-        const Response head(const std::string& url,
-    	    const std::string& data = {},
+        const Response HEAD(const std::string& url,
     	    const std::map<std::string, std::string>& headers = {},
     	    const bool follow_redirects = true,
     	    const uint64_t timeout = 60);
     
-        const Response post(const std::string& url,
+        const Response POST(const std::string& url,
     	    const std::string& data = {},
+    	    const std::map<std::string, std::string>& headers = {},
+    	    const bool follow_redirects = true,
+    	    const uint64_t timeout = 60);
+
+        const Response PUT(const std::string& url,
+    	    const std::string& data = {},
+    	    const std::map<std::string, std::string>& headers = {},
+    	    const bool follow_redirects = true,
+    	    const uint64_t timeout = 60);
+
+        const Response PATCH(const std::string& url,
+    	    const std::string& data = {},
+    	    const std::map<std::string, std::string>& headers = {},
+    	    const bool follow_redirects = true,
+    	    const uint64_t timeout = 60);
+
+        const Response DELETE(const std::string& url,
+    	    const std::string& data = {},
+    	    const std::map<std::string, std::string>& headers = {},
+    	    const bool follow_redirects = true,
+    	    const uint64_t timeout = 60);
+
+        const Response OPTIONS(const std::string& url,
     	    const std::map<std::string, std::string>& headers = {},
     	    const bool follow_redirects = true,
     	    const uint64_t timeout = 60);
