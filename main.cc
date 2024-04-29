@@ -2,7 +2,11 @@
 #include <iostream>
 
 int main(int argc, char** argv) {
-    if(argc < 3) exit(1);
+    if(argc < 3) {
+	std::cout << "Usage: " << argv[0] << " <method> <url>" << std::endl;
+	std::cout << " Methods: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS" << std::endl;
+	exit(1);
+    }
 
     ncw::Response response;
     if(strcmp(argv[1], "GET") == 0)
@@ -20,7 +24,7 @@ int main(int argc, char** argv) {
     else if(strcmp(argv[1], "OPTIONS") == 0)
 	response = ncw::single::OPTIONS(argv[2]);
 
-    std::cout << response.status_code << std::endl;
+    std::cout << "HTTP Status code: " << response.status_code << std::endl;
     for(const auto& header: response.headers)
 	std::cout << header.first << ": " << header.second << std::endl;
 
