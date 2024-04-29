@@ -13,7 +13,7 @@ Yet another HTTP Client implementation of mine with interface taking after Pytho
 #include <ncw.hh>
 
 int main(int argc, char** argv) {
-    ncw::Response response = ncw::request("google.com", ncw::Method::get);
+    ncw::Response response = ncw::single_get("google.com");
     std::cout << response.status_code << std::endl;                     // 200
     std::cout << response.headers["Content-Type"] << std::endl;         // "text/html; charset=ISO-8859-1"
     std::cout << response.data << std::endl;                            // "<!doctype html><html itemscope="" ..."

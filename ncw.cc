@@ -11,8 +11,8 @@
 
 namespace ncw {
 
-    const Response request(const std::string& url,
-	    const Method method,
+    static const Response request(const std::string& url,
+	    const inner::Method method,
 	    const std::string& data,
 	    const std::map<std::string, std::string>& headers,
 	    const bool follow_redirects,
@@ -40,6 +40,30 @@ namespace ncw {
 	    return inner_response;
 	}
 	return inner::Request{parsed_url, connection, method, data, headers, timeout}.perform();
+    }
+
+    const Response single_get(const std::string& url,
+	    const std::string& data,
+	    const std::map<std::string, std::string>& headers,
+	    const bool follow_redirects,
+	    const uint64_t timeout) {
+	return request(url, inner::Method::get, data, headers, follow_redirects, timeout);
+    }
+
+    const Response single_head(const std::string& url,
+	    const std::string& data,
+	    const std::map<std::string, std::string>& headers,
+	    const bool follow_redirects,
+	    const uint64_t timeout) {
+	return request(url, inner::Method::head, data, headers, follow_redirects, timeout);
+    }
+
+    const Response single_post(const std::string& url,
+	    const std::string& data,
+	    const std::map<std::string, std::string>& headers,
+	    const bool follow_redirects,
+	    const uint64_t timeout) {
+	return request(url, inner::Method::post, data, headers, follow_redirects, timeout);
     }
 
 }

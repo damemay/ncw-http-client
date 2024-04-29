@@ -9,24 +9,11 @@
 
 namespace ncw {
 
-    enum class Method {
-	get,
-	head,
-	post,
-    };
-
     struct Response {
 	std::string data;
 	uint16_t status_code;
 	std::map<std::string, std::string> headers;
     };
-
-    const Response request(const std::string& url,
-	    const Method method = Method::get,
-	    const std::string& data = {},
-	    const std::map<std::string, std::string>& headers = {},
-	    const bool follow_redirects = true,
-	    const uint64_t timeout = 60);
 
     namespace inner {
 
@@ -39,6 +26,12 @@ namespace ncw {
         	constexpr std::string_view prefix_https{"https://"};
         	constexpr uint16_t recv_offset{1024};
         }
+
+	enum class Method {
+    	    get,
+    	    head,
+    	    post,
+    	};
 
 	struct Url {
 	    std::string url;
@@ -104,6 +97,24 @@ namespace ncw {
     	        Response perform();
     	};
     }
+
+    const Response single_get(const std::string& url,
+	    const std::string& data = {},
+	    const std::map<std::string, std::string>& headers = {},
+	    const bool follow_redirects = true,
+	    const uint64_t timeout = 60);
+
+    const Response single_head(const std::string& url,
+	    const std::string& data = {},
+	    const std::map<std::string, std::string>& headers = {},
+	    const bool follow_redirects = true,
+	    const uint64_t timeout = 60);
+
+    const Response single_post(const std::string& url,
+	    const std::string& data = {},
+	    const std::map<std::string, std::string>& headers = {},
+	    const bool follow_redirects = true,
+	    const uint64_t timeout = 60);
 
 }
 
