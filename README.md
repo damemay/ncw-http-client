@@ -35,5 +35,4 @@ int main(int argc, char** argv) {
 
 - URL encoding POST and GET parameters
 - Basic Auth
-- Cookies
-- Session with more robust interface
+- Session - a robust interface for calling multiple requests with cookies support
