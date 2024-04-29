@@ -98,23 +98,25 @@ namespace ncw {
     	};
     }
 
-    const Response single_get(const std::string& url,
-	    const std::string& data = {},
-	    const std::map<std::string, std::string>& headers = {},
-	    const bool follow_redirects = true,
-	    const uint64_t timeout = 60);
-
-    const Response single_head(const std::string& url,
-	    const std::string& data = {},
-	    const std::map<std::string, std::string>& headers = {},
-	    const bool follow_redirects = true,
-	    const uint64_t timeout = 60);
-
-    const Response single_post(const std::string& url,
-	    const std::string& data = {},
-	    const std::map<std::string, std::string>& headers = {},
-	    const bool follow_redirects = true,
-	    const uint64_t timeout = 60);
+    namespace single {
+        const Response get(const std::string& url,
+    	    const std::string& data = {},
+    	    const std::map<std::string, std::string>& headers = {},
+    	    const bool follow_redirects = true,
+    	    const uint64_t timeout = 60);
+    
+        const Response head(const std::string& url,
+    	    const std::string& data = {},
+    	    const std::map<std::string, std::string>& headers = {},
+    	    const bool follow_redirects = true,
+    	    const uint64_t timeout = 60);
+    
+        const Response post(const std::string& url,
+    	    const std::string& data = {},
+    	    const std::map<std::string, std::string>& headers = {},
+    	    const bool follow_redirects = true,
+    	    const uint64_t timeout = 60);
+    }
 
 }
 

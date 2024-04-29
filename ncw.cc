@@ -42,28 +42,30 @@ namespace ncw {
 	return inner::Request{parsed_url, connection, method, data, headers, timeout}.perform();
     }
 
-    const Response single_get(const std::string& url,
-	    const std::string& data,
-	    const std::map<std::string, std::string>& headers,
-	    const bool follow_redirects,
-	    const uint64_t timeout) {
-	return request(url, inner::Method::get, data, headers, follow_redirects, timeout);
-    }
+    namespace single {
+	const Response get(const std::string& url,
+    	        const std::string& data,
+    	        const std::map<std::string, std::string>& headers,
+    	        const bool follow_redirects,
+    	        const uint64_t timeout) {
+    	    return request(url, inner::Method::get, data, headers, follow_redirects, timeout);
+    	}
 
-    const Response single_head(const std::string& url,
-	    const std::string& data,
-	    const std::map<std::string, std::string>& headers,
-	    const bool follow_redirects,
-	    const uint64_t timeout) {
-	return request(url, inner::Method::head, data, headers, follow_redirects, timeout);
-    }
+    	const Response head(const std::string& url,
+    	        const std::string& data,
+    	        const std::map<std::string, std::string>& headers,
+    	        const bool follow_redirects,
+    	        const uint64_t timeout) {
+    	    return request(url, inner::Method::head, data, headers, follow_redirects, timeout);
+    	}
 
-    const Response single_post(const std::string& url,
-	    const std::string& data,
-	    const std::map<std::string, std::string>& headers,
-	    const bool follow_redirects,
-	    const uint64_t timeout) {
-	return request(url, inner::Method::post, data, headers, follow_redirects, timeout);
+    	const Response post(const std::string& url,
+    	        const std::string& data,
+    	        const std::map<std::string, std::string>& headers,
+    	        const bool follow_redirects,
+    	        const uint64_t timeout) {
+    	    return request(url, inner::Method::post, data, headers, follow_redirects, timeout);
+    	}
     }
 
 }
