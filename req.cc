@@ -35,11 +35,11 @@ namespace ncw {
 	    size_t left {size};
 	    size_t ret {0};
 	    while(total < size) {
-		if(!connection.is_ssl)
-		    ret = send(connection.fd, data.data()+total, left, 0);
+		if(!connection_.is_ssl)
+		    ret = send(connection_.fd, data.data()+total, left, 0);
 		else {
-		    ret = SSL_write(connection.ssl, data.data()+total, left);
-		    connection.is_openssl_error_retryable(ret);
+		    ret = SSL_write(connection_.ssl, data.data()+total, left);
+		    connection_.is_openssl_error_retryable(ret);
 		}
 		if(ret == -1) throw std::runtime_error(strerror(errno));
 		total += ret;
@@ -49,17 +49,17 @@ namespace ncw {
 
 	void Request::send_request() {
 	    std::string message;
-	    message += parse_method(this->method) + " " + this->url.query + " HTTP/1.1" + std::string(http::newline);
-	    message += "Host: " + this->url.hostname + std::string(http::newline);
+	    message += parse_method(method_) + " " + url_.query + " HTTP/1.1" + std::string(http::newline);
+	    message += "Host: " + url_.hostname + std::string(http::newline);
 	    message += "User-Agent: " + std::string(http::user_agent) + std::string(http::newline);
 
-	    if(!this->headers.empty())
-		for(const auto& header: headers)
+	    if(!headers_.empty())
+		for(const auto& header: headers_)
 		    message += header.first + ": " + header.second + std::string(http::newline);
 
-	    if(this->method != Method::head && this->method != Method::delete_ && this->method != Method::options && !this->data.empty()) {
-		message += "Content-Length: " + std::to_string(this->data.size()) + std::string(http::terminator);
-		message += this->data + std::string(http::newline);
+	    if(method_ != Method::head && method_ != Method::delete_ && method_ != Method::options && !data_.empty()) {
+		message += "Content-Length: " + std::to_string(data_.size()) + std::string(http::terminator);
+		message += data_ + std::string(http::newline);
 	    }
 	    message += std::string(http::newline);
 	    send_all(message);
@@ -80,12 +80,12 @@ namespace ncw {
 	    int recvd = 0;
 	    std::vector<char> buffer(http::recv_offset);
 	    std::string string;
-	    fcntl(connection.fd, F_SETFL, O_NONBLOCK);
-	    if(connection.is_ssl) SSL_set_fd(connection.ssl, connection.fd);
+	    fcntl(connection_.fd, F_SETFL, O_NONBLOCK);
+	    if(connection_.is_ssl) SSL_set_fd(connection_.ssl, connection_.fd);
 	    do {
-		if(poll_event(connection.fd, timeout, POLLIN)) {
-		    if(!connection.is_ssl) {
-			if((recvd = recv(connection.fd, &buffer[b_off], http::recv_offset, 0)) == 0) {
+		if(poll_event(connection_.fd, timeout_, POLLIN)) {
+		    if(!connection_.is_ssl) {
+			if((recvd = recv(connection_.fd, &buffer[b_off], http::recv_offset, 0)) == 0) {
 			    throw std::runtime_error("Peer closed connection");
 			} else if(recvd == -1) {
 			    if(errno == EWOULDBLOCK) recvd = http::recv_offset;
@@ -95,8 +95,8 @@ namespace ncw {
 			string = std::string(buffer.begin(), buffer.end());
 			buffer.resize(buffer.size() + recvd);
 		    } else {
-			if((recvd = SSL_read(connection.ssl, &buffer[b_off], http::recv_offset)) <= 0) {
-			    connection.is_openssl_error_retryable(recvd);
+			if((recvd = SSL_read(connection_.ssl, &buffer[b_off], http::recv_offset)) <= 0) {
+			    connection_.is_openssl_error_retryable(recvd);
 			    continue;
 			}
 			b_off += recvd;
@@ -105,9 +105,9 @@ namespace ncw {
 		    }
 		}
 	    } while(string.find(terminator) == std::string::npos);
-	    const int flags = fcntl(connection.fd, F_GETFL, 0);
-	    fcntl(connection.fd, F_SETFL, flags^O_NONBLOCK);
-	    if(connection.is_ssl) SSL_set_fd(connection.ssl, connection.fd);
+	    const int flags = fcntl(connection_.fd, F_GETFL, 0);
+	    fcntl(connection_.fd, F_SETFL, flags^O_NONBLOCK);
+	    if(connection_.is_ssl) SSL_set_fd(connection_.ssl, connection_.fd);
 	    return string;
 	}
 
@@ -147,17 +147,17 @@ namespace ncw {
 	    std::string data = response.substr(pos+4);
 	    long long remaining = content_length - data.size();
 	    if(remaining <= 0) return data;
-	    if(poll_event(connection.fd, timeout, POLLIN)) {
+	    if(poll_event(connection_.fd, timeout_, POLLIN)) {
 		std::vector<char> buffer(remaining);
 		int recvd {0};
-		if(!connection.is_ssl) {
-		    if((recvd = recv(connection.fd, &buffer[0], remaining, 0)) == 0)
+		if(!connection_.is_ssl) {
+		    if((recvd = recv(connection_.fd, &buffer[0], remaining, 0)) == 0)
 			throw std::runtime_error("Peer closed connection");
 		    else if(recvd == -1)
 			throw std::runtime_error(strerror(errno));
 		} else {
-		    if((recvd = SSL_read(connection.ssl, &buffer[0], remaining)) <= 0)
-			connection.is_openssl_error_retryable(recvd);
+		    if((recvd = SSL_read(connection_.ssl, &buffer[0], remaining)) <= 0)
+			connection_.is_openssl_error_retryable(recvd);
 		}
 		data += std::string(buffer.begin(), buffer.end());
 	    }
@@ -208,7 +208,7 @@ namespace ncw {
 	    auto response = recv_until_terminator(std::string(http::terminator));
 	    auto [headers, status] = parse_headers_status(response);
 	    if(status == 0) throw std::runtime_error("No HTTP status code found");
-	    if(this->method == Method::head || this->method == Method::options)
+	    if(method_ == Method::head || method_ == Method::options)
 		return Response{"", status, headers};
 	    std::string data;
 	    if(headers.find("transfer-encoding") != headers.end())
