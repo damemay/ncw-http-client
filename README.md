@@ -15,7 +15,7 @@ Yet another HTTP Client implementation of mine with interface taking after Pytho
 int main(int argc, char** argv) {
     ncw::Response response {ncw::single::GET("google.com")};    // Single API
     std::cout << response.status_code;                          // 200
-    std::cout << response.headers["content-type"];              // "text/html; charset=ISO-8859-1"
+    std::cout << response.headers["content-type"];              // "text/html;..."
     std::cout << response.data;                                 // "<!doctype html>..."
 
     ncw::Session session {};                                    // Session API
