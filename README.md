@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     std::cout << response.data;                                         // "<!doctype html>..."
 
     ncw::Session session {};                                            // Session API
-    ncw::Response response {session.GET("google.com")};
+    response = session.GET("google.com");
     std::cout << session.get_cookies().at("AEC");                       // "AQTF6H..."
 }
 ```
