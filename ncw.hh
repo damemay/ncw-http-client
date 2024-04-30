@@ -18,13 +18,13 @@ namespace ncw {
     namespace inner {
 
         namespace http {
-        	constexpr std::string_view user_agent{"ncw-http-client"};
-        	constexpr std::string_view newline{"\r\n"};
-        	constexpr std::string_view terminator{"\r\n\r\n"};
-        	constexpr std::string_view chunk_terminator{"0\r\n\r\n"};
-        	constexpr std::string_view prefix_http{"http://"};
-        	constexpr std::string_view prefix_https{"https://"};
-        	constexpr uint16_t recv_offset{1024};
+	    constexpr std::string_view user_agent{"ncw-http-client"};
+    	    constexpr std::string_view newline{"\r\n"};
+	    constexpr std::string_view terminator{"\r\n\r\n"};
+	    constexpr std::string_view chunk_terminator{"0\r\n\r\n"};
+	    constexpr std::string_view prefix_http{"http://"};
+	    constexpr std::string_view prefix_https{"https://"};
+	    constexpr uint16_t recv_offset{1024};
         }
 
 	enum class Method {
@@ -70,15 +70,15 @@ namespace ncw {
 		void handle_openssl_error();
 	};
 
-
 	class Request {
     	    private:
-    	        const Method method;
-    	        const uint64_t timeout;
-    	        const std::string& data;
-    	        const std::map<std::string, std::string>& headers;
-		Connection& connection;
-		const Url& url;
+    	        const Method method_;
+    	        const uint64_t timeout_;
+    	        const std::string& data_;
+    	        const std::map<std::string, std::string>& headers_;
+    	        const std::map<std::string, std::string>& cookies_;
+		Connection& connection_;
+		const Url& url_;
 
 		void send_all(const std::string& data);
 		void send_request();
@@ -93,56 +93,95 @@ namespace ncw {
 			const Method method = Method::get,
 			const std::string& data = {},
 			const std::map<std::string, std::string>& headers = {},
+			const std::map<std::string, std::string>& cookies = {},
 			const uint64_t timeout = 60)
-		    : url{url}, connection{connection},
-		    method{method}, data{data}, headers{headers},
-		    timeout{timeout} {}
+		    : url_{url}, connection_{connection},
+		    method_{method}, data_{data}, headers_{headers},
+		    cookies_{cookies}, timeout_{timeout} {}
 
     	        Response perform();
     	};
     }
 
+#define NCW_METHODS_DECLARATION \
+const Response GET(const std::string& url, \
+    const std::string& data = {}, \
+    const std::map<std::string, std::string>& headers = {}, \
+    const std::map<std::string, std::string>& cookies = {}, \
+    const bool follow_redirects = true, \
+    const uint64_t timeout = 60); \
+const Response HEAD(const std::string& url, \
+    const std::map<std::string, std::string>& headers = {}, \
+    const std::map<std::string, std::string>& cookies = {}, \
+    const bool follow_redirects = true, \
+    const uint64_t timeout = 60); \
+const Response POST(const std::string& url, \
+    const std::string& data = {}, \
+    const std::map<std::string, std::string>& headers = {}, \
+    const std::map<std::string, std::string>& cookies = {}, \
+    const bool follow_redirects = true, \
+    const uint64_t timeout = 60); \
+const Response PUT(const std::string& url, \
+    const std::string& data = {}, \
+    const std::map<std::string, std::string>& headers = {}, \
+    const std::map<std::string, std::string>& cookies = {}, \
+    const bool follow_redirects = true, \
+    const uint64_t timeout = 60); \
+const Response PATCH(const std::string& url, \
+    const std::string& data = {}, \
+    const std::map<std::string, std::string>& headers = {}, \
+    const std::map<std::string, std::string>& cookies = {}, \
+    const bool follow_redirects = true, \
+    const uint64_t timeout = 60); \
+const Response DELETE(const std::string& url, \
+    const std::string& data = {}, \
+    const std::map<std::string, std::string>& headers = {}, \
+    const std::map<std::string, std::string>& cookies = {}, \
+    const bool follow_redirects = true, \
+    const uint64_t timeout = 60); \
+const Response OPTIONS(const std::string& url, \
+    const std::map<std::string, std::string>& headers = {}, \
+    const std::map<std::string, std::string>& cookies = {}, \
+    const bool follow_redirects = true, \
+    const uint64_t timeout = 60);
+
     namespace single {
-        const Response GET(const std::string& url,
-    	    const std::string& data = {},
-    	    const std::map<std::string, std::string>& headers = {},
-    	    const bool follow_redirects = true,
-    	    const uint64_t timeout = 60);
-    
-        const Response HEAD(const std::string& url,
-    	    const std::map<std::string, std::string>& headers = {},
-    	    const bool follow_redirects = true,
-    	    const uint64_t timeout = 60);
-    
-        const Response POST(const std::string& url,
-    	    const std::string& data = {},
-    	    const std::map<std::string, std::string>& headers = {},
-    	    const bool follow_redirects = true,
-    	    const uint64_t timeout = 60);
-
-        const Response PUT(const std::string& url,
-    	    const std::string& data = {},
-    	    const std::map<std::string, std::string>& headers = {},
-    	    const bool follow_redirects = true,
-    	    const uint64_t timeout = 60);
-
-        const Response PATCH(const std::string& url,
-    	    const std::string& data = {},
-    	    const std::map<std::string, std::string>& headers = {},
-    	    const bool follow_redirects = true,
-    	    const uint64_t timeout = 60);
-
-        const Response DELETE(const std::string& url,
-    	    const std::string& data = {},
-    	    const std::map<std::string, std::string>& headers = {},
-    	    const bool follow_redirects = true,
-    	    const uint64_t timeout = 60);
-
-        const Response OPTIONS(const std::string& url,
-    	    const std::map<std::string, std::string>& headers = {},
-    	    const bool follow_redirects = true,
-    	    const uint64_t timeout = 60);
+	NCW_METHODS_DECLARATION
     }
+
+    class Session {
+	private:
+	    uint64_t timeout_ {60};
+	    bool follow_redirects_ {true};
+	    inner::Url url_ {};
+	    std::string data_ {};
+    	    std::map<std::string, std::string> headers_ {};
+	    std::map<std::string, std::string> cookies_ {};
+	    inner::Connection connection_ {true};
+
+	public:
+	    inline Session(std::string data = {},
+		    std::map<std::string, std::string> headers = {},
+		    std::map<std::string, std::string> cookies = {},
+		    uint64_t timeout = 60,
+		    bool follow_redirects = true)
+		: data_{data}, headers_{headers}, cookies_{cookies},
+		timeout_{timeout}, follow_redirects_{follow_redirects} {}
+
+	    inline void set_data(std::string data) { data_ = data; }
+	    inline void set_headers(std::map<std::string, std::string> headers) { headers_ = headers; }
+	    inline void set_cookies(std::map<std::string, std::string> cookies) { cookies_ = cookies; }
+
+	    inline void clear_data() { data_.clear(); }
+	    inline void clear_header() { headers_.clear(); }
+	    inline void clear_cookie() { cookies_.clear(); }
+
+	    inline void add_headers(std::map<std::string, std::string> headers) { for(auto& header: headers) headers_.insert_or_assign(header.first, header.second); }
+	    inline void add_cookies(std::map<std::string, std::string> cookies) { for(auto& cookie: cookies) cookies_.insert_or_assign(cookie.first, cookie.second); }
+
+
+	    NCW_METHODS_DECLARATION
+    };
 
 }
 
