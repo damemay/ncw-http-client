@@ -13,14 +13,14 @@ Yet another HTTP Client implementation of mine with interface taking after Pytho
 #include <ncw.hh>
 
 int main(int argc, char** argv) {
-    ncw::Response response {ncw::single::GET("google.com")};            // Single API
-    std::cout << response.status_code;                                  // 200
-    std::cout << response.headers["content-type"];                      // "text/html; charset=ISO-8859-1"
-    std::cout << response.data;                                         // "<!doctype html>..."
+    ncw::Response response {ncw::single::GET("google.com")};    // Single API
+    std::cout << response.status_code;                          // 200
+    std::cout << response.headers["content-type"];              // "text/html; charset=ISO-8859-1"
+    std::cout << response.data;                                 // "<!doctype html>..."
 
-    ncw::Session session {};                                            // Session API
+    ncw::Session session {};                                    // Session API
     response = session.GET("google.com");
-    std::cout << session.get_cookies().at("AEC");                       // "AQTF6H..."
+    std::cout << session.get_cookies().at("AEC");               // "AQTF6H..."
 }
 ```
 
