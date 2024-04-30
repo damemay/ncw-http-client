@@ -86,6 +86,7 @@ namespace ncw {
 		std::string recv_until_terminator(std::string terminator);
 		std::string get_data_in_chunks(const std::string& response);
 		std::string get_data_with_content_length(const std::string& response, const std::string& length);
+		std::pair<std::map<std::string, std::string>, uint16_t> parse_headers_status(std::string response);
     	    
     	    public:
     	        inline Request(const Url& url,
@@ -159,6 +160,8 @@ const Response OPTIONS(const std::string& url, \
 	    std::map<std::string, std::string> cookies_ {};
 	    inner::Connection connection_ {true};
 
+	    void parse_cookies(const Response& response);
+
 	public:
 	    inline Session(std::string data = {},
 		    std::map<std::string, std::string> headers = {},
@@ -167,6 +170,9 @@ const Response OPTIONS(const std::string& url, \
 		    bool follow_redirects = true)
 		: data_{data}, headers_{headers}, cookies_{cookies},
 		timeout_{timeout}, follow_redirects_{follow_redirects} {}
+	    ~Session() = default;
+
+	    inline const std::map<std::string, std::string>& get_cookies() const { return cookies_; }
 
 	    inline void set_data(std::string data) { data_ = data; }
 	    inline void set_headers(std::map<std::string, std::string> headers) { headers_ = headers; }

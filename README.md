@@ -13,17 +13,21 @@ Yet another HTTP Client implementation of mine with interface taking after Pytho
 #include <ncw.hh>
 
 int main(int argc, char** argv) {
-    ncw::Response response = ncw::single::GET("google.com");            // Single API
-    std::cout << response.status_code << std::endl;                     // 200
-    std::cout << response.headers["content-type"] << std::endl;         // "text/html; charset=ISO-8859-1"
-    std::cout << response.data << std::endl;                            // "<!doctype html><html itemscope="" ..."
+    ncw::Response response {ncw::single::GET("google.com")};            // Single API
+    std::cout << response.status_code;                                  // 200
+    std::cout << response.headers["content-type"];                      // "text/html; charset=ISO-8859-1"
+    std::cout << response.data;                                         // "<!doctype html>..."
 
+    ncw::Session session {};                                            // Session API
+    ncw::Response response {session.GET("google.com")};
+    std::cout << session.get_cookies().at("AEC");                       // "AQTF6H..."
 }
 ```
 
 # Features
 
-- Simple API
+- Simple "single" API
+- Session API with cookie support (no attributes handling yet)
 - Custom headers
 - Send body data
 - Follow redirects
@@ -31,8 +35,8 @@ int main(int argc, char** argv) {
 - GET, HEAD, POST, PATCH, PUT, DELETE, OPTIONS methods 
 - HTTPS connection with OpenSSL
 
-# Planned featurs
+# Planned features
 
+- Fix performance on large data (implement HTTP/2?)
 - URL encoding POST and GET parameters
 - Basic Auth
-- Session - a robust interface for calling multiple requests with cookies support

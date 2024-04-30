@@ -124,11 +124,39 @@ if(p_url.hostname != url_.hostname || p_url.port != url_.port) { \
     connection_.connect_socket(p_url.hostname, p_url.port); \
     url_ = std::move(p_url); \
 } \
-if(!headers_.empty()) headers_ = headers; \
-if(!cookies_.empty()) cookies_ = cookies;
+if(!headers.empty()) headers_ = headers; \
+if(!cookies.empty()) cookies_ = cookies;
 
 #define NCW_METHODS_SESSION_DEFINITION_DATA \
-if(!data_.empty()) data_ = data;
+if(!data.empty()) data_ = data;
+
+    static std::pair<std::string, std::string> split_str_by_char(const std::string& str, char delim) {
+	size_t sep {0};
+    	if((sep = str.find_first_of(delim)) != std::string::npos) {
+	    auto key = str.substr(0,sep);
+	    auto val = str.substr(sep+1);
+	    if(key == "Expires" || key == "Max-Age" || key == "Path" || key == "SameSite" || key == "Domain")
+		return std::make_pair("", "");
+	    return std::make_pair(key, val);
+	}
+	return std::make_pair("", "");
+    }
+
+    void Session::parse_cookies(const Response& response) {
+	if(response.headers.find("set-cookie") == response.headers.end()) return;
+	const std::string& cookies = response.headers.at("set-cookie");
+	size_t prev {0};
+	size_t next {0};
+	while((next = cookies.find("; ", prev)) != std::string::npos) {
+	    auto str = cookies.substr(prev, next-prev);
+	    auto [key, val] = split_str_by_char(str, '=');
+	    if(!key.empty()) cookies_[key] = val;
+	    prev = next+2;
+	}
+	auto str = cookies.substr(prev, next-prev);
+    	auto [key, val] = split_str_by_char(str, '=');
+	if(!key.empty()) cookies_[key] = val;
+    }
 
     const Response Session::GET(const std::string& url,
 	    const std::string& data,
@@ -138,7 +166,9 @@ if(!data_.empty()) data_ = data;
             const uint64_t timeout) {
 	NCW_METHODS_SESSION_DEFINITION
 	NCW_METHODS_SESSION_DEFINITION_DATA
-        return request(url_, inner::Method::get, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+        auto response = request(url_, inner::Method::get, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+	parse_cookies(response);
+	return response;
     }
     
     const Response Session::HEAD(const std::string& url,
@@ -147,7 +177,9 @@ if(!data_.empty()) data_ = data;
             const bool follow_redirects,
             const uint64_t timeout) {
 	NCW_METHODS_SESSION_DEFINITION
-        return request(url_, inner::Method::head, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+        auto response = request(url_, inner::Method::head, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+	parse_cookies(response);
+	return response;
     }
     
     const Response Session::POST(const std::string& url,
@@ -158,7 +190,9 @@ if(!data_.empty()) data_ = data;
             const uint64_t timeout) {
 	NCW_METHODS_SESSION_DEFINITION
 	NCW_METHODS_SESSION_DEFINITION_DATA
-        return request(url_, inner::Method::post, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+        auto response = request(url_, inner::Method::post, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+	parse_cookies(response);
+	return response;
     }
     
     const Response Session::PUT(const std::string& url,
@@ -169,7 +203,9 @@ if(!data_.empty()) data_ = data;
 	    const uint64_t timeout) {
 	NCW_METHODS_SESSION_DEFINITION
 	NCW_METHODS_SESSION_DEFINITION_DATA
-        return request(url_, inner::Method::put, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+        auto response = request(url_, inner::Method::put, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+	parse_cookies(response);
+	return response;
     }
     
     const Response Session::PATCH(const std::string& url,
@@ -180,7 +216,9 @@ if(!data_.empty()) data_ = data;
 	    const uint64_t timeout) {
 	NCW_METHODS_SESSION_DEFINITION
 	NCW_METHODS_SESSION_DEFINITION_DATA
-        return request(url_, inner::Method::patch, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+        auto response = request(url_, inner::Method::patch, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+	parse_cookies(response);
+	return response;
     }
     
     const Response Session::DELETE(const std::string& url,
@@ -191,7 +229,9 @@ if(!data_.empty()) data_ = data;
 	    const uint64_t timeout) {
 	NCW_METHODS_SESSION_DEFINITION
 	NCW_METHODS_SESSION_DEFINITION_DATA
-        return request(url_, inner::Method::delete_, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+        auto response = request(url_, inner::Method::delete_, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+	parse_cookies(response);
+	return response;
     }
     
     const Response Session::OPTIONS(const std::string& url,
@@ -200,7 +240,9 @@ if(!data_.empty()) data_ = data;
     	    const bool follow_redirects,
 	    const uint64_t timeout) {
 	NCW_METHODS_SESSION_DEFINITION
-        return request(url_, inner::Method::options, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+        auto response = request(url_, inner::Method::options, data_, headers_, cookies_, connection_, follow_redirects_, timeout_);
+	parse_cookies(response);
+	return response;
     }
 
 }

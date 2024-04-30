@@ -57,6 +57,14 @@ namespace ncw {
 		for(const auto& header: headers_)
 		    message += header.first + ": " + header.second + std::string(http::newline);
 
+	    if(!cookies_.empty()) {
+		message += "Cookie: ";
+		for(const auto& cookie: cookies_)
+		    message += cookie.first + "=" + cookie.second + "; ";
+		message.erase(message.find_last_of(';'));
+		message += std::string(http::newline);
+	    }
+
 	    if(method_ != Method::head && method_ != Method::delete_ && method_ != Method::options && !data_.empty()) {
 		message += "Content-Length: " + std::to_string(data_.size()) + std::string(http::terminator);
 		message += data_ + std::string(http::newline);
@@ -117,7 +125,7 @@ namespace ncw {
 	    return std::stoi(line.substr(st));
 	}
 
-	static std::pair<std::map<std::string, std::string>, uint16_t> parse_headers_status(std::string response) {
+	std::pair<std::map<std::string, std::string>, uint16_t> Request::parse_headers_status(std::string response) {
 	    std::map<std::string, std::string> headers;
 	    uint16_t status_code;
 	    size_t nl{0};
@@ -132,6 +140,9 @@ namespace ncw {
 		    std::string key = line.substr(0,sep);
 		    std::string val = line.substr(sep+2);
 		    for(auto& c : key) c = std::tolower(c);
+		    if(key == "set-cookie")
+			if(headers.find("set-cookie") != headers.end())
+			    val += "; " + headers.at("set-cookie");
 		    headers[key] = val;
 		} else 
 		    status_code = get_status_code(line);
@@ -169,8 +180,13 @@ namespace ncw {
 	    assert(pos != std::string::npos);
 	    std::string data = response.substr(pos+4);
 	    size_t end{};
-	    long long size = std::stoll(data, &end, 16);
-	    end += 2;
+	    long long size;
+	    try {
+		size = std::stoll(data, &end, 16);
+	    	end += 2;
+	    } catch(std::invalid_argument const& e) {
+		return std::make_pair(data, false);
+	    }
 	    size_t next = data.find(http::newline);
 	    long long len = next-end;
 	    if(size-len <= 0 || len <= 0) {
@@ -211,9 +227,9 @@ namespace ncw {
 	    if(method_ == Method::head || method_ == Method::options)
 		return Response{"", status, headers};
 	    std::string data;
-	    if(headers.find("transfer-encoding") != headers.end())
-		data = get_data_in_chunks(response);
-	    else if(headers.find("content-length") != headers.end())
+	    if(headers.find("transfer-encoding") != headers.end()) {
+		if(headers.at("transfer-encoding") == "chunked") data = get_data_in_chunks(response);
+	    } else if(headers.find("content-length") != headers.end())
 		data = get_data_with_content_length(response, headers.at("content-length"));
 	    return Response{data, status, headers};
 	};
