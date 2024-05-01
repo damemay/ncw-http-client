@@ -1,8 +1,10 @@
 #include "ncw.hh"
+#include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <stdexcept>
 #include <sys/fcntl.h>
 #include <vector>
@@ -13,6 +15,11 @@
 #include <fcntl.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+
+#ifdef NCW_DEBUG
+#include <chrono>
+#include <iostream>
+#endif
 
 namespace ncw {
     namespace inner {
@@ -70,6 +77,9 @@ namespace ncw {
 		message += data_ + std::string(http::newline);
 	    }
 	    message += std::string(http::newline);
+#ifdef NCW_DEBUG
+	    std::cout << message << std::endl;
+#endif
 	    send_all(message);
 	}
 
@@ -83,40 +93,53 @@ namespace ncw {
 	    return pfd[0].revents & event;
 	}
 
+	static bool find_string_in_vector(const std::vector<char>& haystack, const std::string& needle) {
+#ifdef NCW_DEBUG
+	    auto s {std::chrono::high_resolution_clock::now()};
+#endif
+	    const char* n = needle.c_str();
+	    bool found = std::search(haystack.begin(), haystack.end(), n, n+strlen(n)) != haystack.end();
+#ifdef NCW_DEBUG
+	    auto e {std::chrono::high_resolution_clock::now()};
+	    std::chrono::duration<double, std::milli> ms {e - s};
+	    std::cout << ">find_string_in_vector: " << ms.count() << std::endl;
+#endif
+	    return found;
+	}
+
 	std::string Request::recv_until_terminator(std::string terminator) {
 	    size_t b_off = 0;
 	    int recvd = 0;
 	    std::vector<char> buffer(http::recv_offset);
-	    std::string string;
 	    fcntl(connection_.fd, F_SETFL, O_NONBLOCK);
 	    if(connection_.is_ssl) SSL_set_fd(connection_.ssl, connection_.fd);
+	    std::vector<char> tmp_buffer(http::recv_offset);
 	    do {
 		if(poll_event(connection_.fd, timeout_, POLLIN)) {
 		    if(!connection_.is_ssl) {
-			if((recvd = recv(connection_.fd, &buffer[b_off], http::recv_offset, 0)) == 0) {
+			if((recvd = recv(connection_.fd, &tmp_buffer[0], http::recv_offset, 0)) == 0) {
 			    throw std::runtime_error("Peer closed connection");
 			} else if(recvd == -1) {
 			    if(errno == EWOULDBLOCK) recvd = http::recv_offset;
 			    else throw std::runtime_error(strerror(errno));
 			}
 			b_off += recvd;
-			string = std::string(buffer.begin(), buffer.end());
-			buffer.resize(buffer.size() + recvd);
+			buffer.insert(buffer.end(), std::begin(tmp_buffer), std::end(tmp_buffer));
 		    } else {
-			if((recvd = SSL_read(connection_.ssl, &buffer[b_off], http::recv_offset)) <= 0) {
+			if((recvd = SSL_read(connection_.ssl, &tmp_buffer[0], http::recv_offset)) <= 0) {
 			    connection_.is_openssl_error_retryable(recvd);
 			    continue;
 			}
 			b_off += recvd;
-			string = std::string(buffer.begin(), buffer.end());
-			buffer.resize(buffer.size() + recvd);
+			buffer.insert(buffer.end(), std::begin(tmp_buffer), std::end(tmp_buffer));
 		    }
 		}
-	    } while(string.find(terminator) == std::string::npos);
+	    } while(!find_string_in_vector(tmp_buffer, terminator));
 	    const int flags = fcntl(connection_.fd, F_GETFL, 0);
 	    fcntl(connection_.fd, F_SETFL, flags^O_NONBLOCK);
 	    if(connection_.is_ssl) SSL_set_fd(connection_.ssl, connection_.fd);
-	    return string;
+	    return std::string(buffer.begin(), buffer.end());
+;
 	}
 
 	static uint16_t get_status_code(std::string line) {
@@ -213,16 +236,57 @@ namespace ncw {
 	}
 
 	std::string Request::get_data_in_chunks(const std::string& response) {
+#ifdef NCW_DEBUG
+	    auto s {std::chrono::high_resolution_clock::now()};
+#endif
 	    auto [data, read_whole] = read_all_from_buf(response);
+#ifdef NCW_DEBUG
+	    auto e {std::chrono::high_resolution_clock::now()};
+	    std::chrono::duration<double, std::milli> ms {e - s};
+	    std::cout << ">read_all_from_buf: " << ms.count() << std::endl;
+	    // std::cout << data << std::endl;
+#endif
 	    if(read_whole) return data;
+#ifdef NCW_DEBUG
+	    s = std::chrono::high_resolution_clock::now();
+#endif
 	    data += recv_until_terminator(std::string(http::chunk_terminator));
+#ifdef NCW_DEBUG
+	    e = std::chrono::high_resolution_clock::now();
+	    ms = e - s;
+	    std::cout << ">recv_until_terminator: " << ms.count() << std::endl;
+#endif
 	    data.shrink_to_fit();
-	    return parse_chunks(data);
+#ifdef NCW_DEBUG
+	    s = std::chrono::high_resolution_clock::now();
+#endif
+	    auto r = parse_chunks(data);
+#ifdef NCW_DEBUG
+	    e = std::chrono::high_resolution_clock::now();
+	    ms = e - s;
+	    std::cout << ">parse_chunks: " << ms.count() << std::endl;
+#endif
+	    return r;
 	}
 
 	Response Request::read_response() {
+#ifdef NCW_DEBUG
+	    auto s {std::chrono::high_resolution_clock::now()};
+#endif
 	    auto response = recv_until_terminator(std::string(http::terminator));
+#ifdef NCW_DEBUG
+	    auto e {std::chrono::high_resolution_clock::now()};
+	    std::chrono::duration<double, std::milli> ms {e - s};
+	    std::cout << ">recv_until_terminator: " << ms.count() << std::endl;
+	    std::cout << response << std::endl;
+	    s = std::chrono::high_resolution_clock::now();
+#endif
 	    auto [headers, status] = parse_headers_status(response);
+#ifdef NCW_DEBUG
+	    e = std::chrono::high_resolution_clock::now();
+	    ms = e - s;
+	    std::cout << ">parse_headers_status: " << ms.count() << std::endl;
+#endif
 	    if(status == 0) throw std::runtime_error("No HTTP status code found");
 	    if(method_ == Method::head || method_ == Method::options)
 		return Response{"", status, headers};

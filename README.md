@@ -37,6 +37,6 @@ int main(int argc, char** argv) {
 
 # Planned features
 
-- Fix performance on large data (implement HTTP/2?)
+- Fixes
 - URL encoding POST and GET parameters
 - Basic Auth

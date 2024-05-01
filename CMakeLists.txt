@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
     add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
+    add_compile_definitions(NCW_DEBUG)
 else()
     add_compile_options(-O2)
 endif()

@@ -24,9 +24,11 @@ int main(int argc, char** argv) {
     else if(strcmp(argv[1], "OPTIONS") == 0)
 	response = ncw::single::OPTIONS(argv[2]);
 
+#ifndef NCW_DEBUG
     std::cout << "HTTP Status code: " << response.status_code << std::endl;
     for(const auto& header: response.headers)
 	std::cout << header.first << ": " << header.second << std::endl;
 
     std::cout << response.data << std::endl;
+#endif
 }
