@@ -94,52 +94,61 @@ namespace ncw {
 	}
 
 	static bool find_string_in_vector(const std::vector<char>& haystack, const std::string& needle) {
-#ifdef NCW_DEBUG
-	    auto s {std::chrono::high_resolution_clock::now()};
-#endif
 	    const char* n = needle.c_str();
 	    bool found = std::search(haystack.begin(), haystack.end(), n, n+strlen(n)) != haystack.end();
-#ifdef NCW_DEBUG
-	    auto e {std::chrono::high_resolution_clock::now()};
-	    std::chrono::duration<double, std::milli> ms {e - s};
-	    std::cout << ">find_string_in_vector: " << ms.count() << std::endl;
-#endif
 	    return found;
 	}
 
+	static int recv_nb(Connection& connection, std::vector<char>& buffer, size_t size, int timeout) {
+	    int recvd {0};
+	    if(poll_event(connection.fd, timeout, POLLIN)) {
+		if(!connection.is_ssl) {
+		    if((recvd = recv(connection.fd, &buffer[0], size, 0)) == 0) {
+		        throw std::runtime_error("Peer closed connection");
+		    } else if(recvd == -1) {
+		        if(errno == EWOULDBLOCK) recvd = size;
+		        else throw std::runtime_error(strerror(errno));
+		    }
+		} else {
+		    if((recvd = SSL_read(connection.ssl, &buffer[0], size)) <= 0) {
+		        connection.is_openssl_error_retryable(recvd);
+			recvd = -1;
+		    }
+		}
+	    }
+	    return recvd;
+	}
+
+	static int recv_b(Connection& connection, std::vector<char>& buffer, size_t size, int timeout) {
+	    int recvd {0};
+	    if(poll_event(connection.fd, timeout, POLLIN)) {
+		if(!connection.is_ssl) {
+	    	    if((recvd = recv(connection.fd, &buffer[0], size, 0)) == 0)
+	    	        throw std::runtime_error("Peer closed connection");
+	    	    else if(recvd == -1)
+	    	        throw std::runtime_error(strerror(errno));
+	    	} else {
+	    	    if((recvd = SSL_read(connection.ssl, &buffer[0], size)) <= 0)
+	    		connection.is_openssl_error_retryable(recvd);
+	    	}
+	    }
+	    return recvd;
+	}
+
 	std::string Request::recv_until_terminator(std::string terminator) {
-	    size_t b_off = 0;
-	    int recvd = 0;
 	    std::vector<char> buffer(http::recv_offset);
 	    fcntl(connection_.fd, F_SETFL, O_NONBLOCK);
 	    if(connection_.is_ssl) SSL_set_fd(connection_.ssl, connection_.fd);
 	    std::vector<char> tmp_buffer(http::recv_offset);
 	    do {
-		if(poll_event(connection_.fd, timeout_, POLLIN)) {
-		    if(!connection_.is_ssl) {
-			if((recvd = recv(connection_.fd, &tmp_buffer[0], http::recv_offset, 0)) == 0) {
-			    throw std::runtime_error("Peer closed connection");
-			} else if(recvd == -1) {
-			    if(errno == EWOULDBLOCK) recvd = http::recv_offset;
-			    else throw std::runtime_error(strerror(errno));
-			}
-			b_off += recvd;
-			buffer.insert(buffer.end(), std::begin(tmp_buffer), std::end(tmp_buffer));
-		    } else {
-			if((recvd = SSL_read(connection_.ssl, &tmp_buffer[0], http::recv_offset)) <= 0) {
-			    connection_.is_openssl_error_retryable(recvd);
-			    continue;
-			}
-			b_off += recvd;
-			buffer.insert(buffer.end(), std::begin(tmp_buffer), std::end(tmp_buffer));
-		    }
-		}
+		int recvd = recv_nb(connection_, tmp_buffer, http::recv_offset, timeout_);
+		if(recvd == 0 || recvd == -1) continue;
+		buffer.insert(buffer.end(), std::begin(tmp_buffer), std::end(tmp_buffer));
 	    } while(!find_string_in_vector(tmp_buffer, terminator));
 	    const int flags = fcntl(connection_.fd, F_GETFL, 0);
 	    fcntl(connection_.fd, F_SETFL, flags^O_NONBLOCK);
 	    if(connection_.is_ssl) SSL_set_fd(connection_.ssl, connection_.fd);
 	    return std::string(buffer.begin(), buffer.end());
-;
 	}
 
 	static uint16_t get_status_code(std::string line) {
@@ -179,22 +188,20 @@ namespace ncw {
 	    size_t pos = response.find(http::terminator);
 	    assert(pos != std::string::npos);
 	    std::string data = response.substr(pos+4);
+	    data.shrink_to_fit();
 	    long long remaining = content_length - data.size();
+#ifdef NCW_DEBUG
+	    std::cout << data.size() << "/" << remaining << std::endl;
+#endif
 	    if(remaining <= 0) return data;
-	    if(poll_event(connection_.fd, timeout_, POLLIN)) {
-		std::vector<char> buffer(remaining);
-		int recvd {0};
-		if(!connection_.is_ssl) {
-		    if((recvd = recv(connection_.fd, &buffer[0], remaining, 0)) == 0)
-			throw std::runtime_error("Peer closed connection");
-		    else if(recvd == -1)
-			throw std::runtime_error(strerror(errno));
-		} else {
-		    if((recvd = SSL_read(connection_.ssl, &buffer[0], remaining)) <= 0)
-			connection_.is_openssl_error_retryable(recvd);
-		}
-		data += std::string(buffer.begin(), buffer.end());
-	    }
+	    std::vector<char> buffer(remaining);
+	    int recvd = recv_b(connection_, buffer, remaining, timeout_);
+	    data += std::string(buffer.begin(), buffer.end());
+#ifdef NCW_DEBUG
+	    data.shrink_to_fit();
+	    std::cout << data.size() << "/" << content_length << std::endl;
+	    std::cout << data << std::endl;
+#endif
 	    return data;
 	}
 
@@ -244,7 +251,6 @@ namespace ncw {
 	    auto e {std::chrono::high_resolution_clock::now()};
 	    std::chrono::duration<double, std::milli> ms {e - s};
 	    std::cout << ">read_all_from_buf: " << ms.count() << std::endl;
-	    // std::cout << data << std::endl;
 #endif
 	    if(read_whole) return data;
 #ifdef NCW_DEBUG
@@ -278,7 +284,6 @@ namespace ncw {
 	    auto e {std::chrono::high_resolution_clock::now()};
 	    std::chrono::duration<double, std::milli> ms {e - s};
 	    std::cout << ">recv_until_terminator: " << ms.count() << std::endl;
-	    std::cout << response << std::endl;
 	    s = std::chrono::high_resolution_clock::now();
 #endif
 	    auto [headers, status] = parse_headers_status(response);

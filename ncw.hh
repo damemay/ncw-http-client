@@ -24,6 +24,7 @@ namespace ncw {
 	    constexpr std::string_view chunk_terminator{"0\r\n\r\n"};
 	    constexpr std::string_view prefix_http{"http://"};
 	    constexpr std::string_view prefix_https{"https://"};
+	    constexpr uint8_t def_timeout{2};
 	    constexpr uint16_t recv_offset{1024};
         }
 
@@ -95,7 +96,7 @@ namespace ncw {
 			const std::string& data = {},
 			const std::map<std::string, std::string>& headers = {},
 			const std::map<std::string, std::string>& cookies = {},
-			const uint64_t timeout = 60)
+			const uint64_t timeout = http::def_timeout)
 		    : url_{url}, connection_{connection},
 		    method_{method}, data_{data}, headers_{headers},
 		    cookies_{cookies}, timeout_{timeout} {}
@@ -110,41 +111,41 @@ const Response GET(const std::string& url, \
     const std::map<std::string, std::string>& headers = {}, \
     const std::map<std::string, std::string>& cookies = {}, \
     const bool follow_redirects = true, \
-    const uint64_t timeout = 60); \
+    const uint64_t timeout = inner::http::def_timeout); \
 const Response HEAD(const std::string& url, \
     const std::map<std::string, std::string>& headers = {}, \
     const std::map<std::string, std::string>& cookies = {}, \
     const bool follow_redirects = true, \
-    const uint64_t timeout = 60); \
+    const uint64_t timeout = inner::http::def_timeout); \
 const Response POST(const std::string& url, \
     const std::string& data = {}, \
     const std::map<std::string, std::string>& headers = {}, \
     const std::map<std::string, std::string>& cookies = {}, \
     const bool follow_redirects = true, \
-    const uint64_t timeout = 60); \
+    const uint64_t timeout = inner::http::def_timeout); \
 const Response PUT(const std::string& url, \
     const std::string& data = {}, \
     const std::map<std::string, std::string>& headers = {}, \
     const std::map<std::string, std::string>& cookies = {}, \
     const bool follow_redirects = true, \
-    const uint64_t timeout = 60); \
+    const uint64_t timeout = inner::http::def_timeout); \
 const Response PATCH(const std::string& url, \
     const std::string& data = {}, \
     const std::map<std::string, std::string>& headers = {}, \
     const std::map<std::string, std::string>& cookies = {}, \
     const bool follow_redirects = true, \
-    const uint64_t timeout = 60); \
+    const uint64_t timeout = inner::http::def_timeout); \
 const Response DELETE(const std::string& url, \
     const std::string& data = {}, \
     const std::map<std::string, std::string>& headers = {}, \
     const std::map<std::string, std::string>& cookies = {}, \
     const bool follow_redirects = true, \
-    const uint64_t timeout = 60); \
+    const uint64_t timeout = inner::http::def_timeout); \
 const Response OPTIONS(const std::string& url, \
     const std::map<std::string, std::string>& headers = {}, \
     const std::map<std::string, std::string>& cookies = {}, \
     const bool follow_redirects = true, \
-    const uint64_t timeout = 60);
+    const uint64_t timeout = inner::http::def_timeout);
 
     namespace single {
 	NCW_METHODS_DECLARATION
@@ -152,7 +153,7 @@ const Response OPTIONS(const std::string& url, \
 
     class Session {
 	private:
-	    uint64_t timeout_ {60};
+	    uint64_t timeout_ {inner::http::def_timeout};
 	    bool follow_redirects_ {true};
 	    inner::Url url_ {};
 	    std::string data_ {};
@@ -166,7 +167,7 @@ const Response OPTIONS(const std::string& url, \
 	    inline Session(std::string data = {},
 		    std::map<std::string, std::string> headers = {},
 		    std::map<std::string, std::string> cookies = {},
-		    uint64_t timeout = 60,
+		    uint64_t timeout = inner::http::def_timeout,
 		    bool follow_redirects = true)
 		: data_{data}, headers_{headers}, cookies_{cookies},
 		timeout_{timeout}, follow_redirects_{follow_redirects} {}
