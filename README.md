@@ -5,7 +5,7 @@ Yet another HTTP Client implementation of mine with interface taking after Pytho
 
 ### Why shouldn't I just use [C++ Requests](https://github.com/libcpr/cpr)?
 
-*ncw* introduces minimum number of new types allowing for simple, fast but powerful usage - all in and for C++17 code. Because of that, it's as dependency-free as it can and it doesn't need to conform with design/API of library it's wrapping.
+*ncw* introduces minimum number of new types allowing for simple, fast but powerful usage - all in and for C++17 code. Because of that, it's as dependency-free as it can and it doesn't need to conform with design/API of library it's wrapping. Although also because of that, it probably will never have the stability of libcurl nor be production-ready.
 
 # Sample
 
