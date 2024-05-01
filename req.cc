@@ -245,32 +245,35 @@ namespace ncw {
 	std::string Request::get_data_in_chunks(const std::string& response) {
 #ifdef NCW_DEBUG
 	    auto s {std::chrono::high_resolution_clock::now()};
+	    std::cout << ">read_all_from_buf: ";
 #endif
 	    auto [data, read_whole] = read_all_from_buf(response);
 #ifdef NCW_DEBUG
 	    auto e {std::chrono::high_resolution_clock::now()};
 	    std::chrono::duration<double, std::milli> ms {e - s};
-	    std::cout << ">read_all_from_buf: " << ms.count() << std::endl;
+	    std::cout << ms.count() << std::endl;
 #endif
 	    if(read_whole) return data;
 #ifdef NCW_DEBUG
 	    s = std::chrono::high_resolution_clock::now();
+	    std::cout << ">recv_until_terminator: ";
 #endif
 	    data += recv_until_terminator(std::string(http::chunk_terminator));
 #ifdef NCW_DEBUG
 	    e = std::chrono::high_resolution_clock::now();
 	    ms = e - s;
-	    std::cout << ">recv_until_terminator: " << ms.count() << std::endl;
+	    std::cout << ms.count() << std::endl;
 #endif
 	    data.shrink_to_fit();
 #ifdef NCW_DEBUG
 	    s = std::chrono::high_resolution_clock::now();
+	    std::cout << ">parse_chunks: ";
 #endif
 	    auto r = parse_chunks(data);
 #ifdef NCW_DEBUG
 	    e = std::chrono::high_resolution_clock::now();
 	    ms = e - s;
-	    std::cout << ">parse_chunks: " << ms.count() << std::endl;
+	    std::cout << ms.count() << std::endl;
 #endif
 	    return r;
 	}
@@ -278,20 +281,15 @@ namespace ncw {
 	Response Request::read_response() {
 #ifdef NCW_DEBUG
 	    auto s {std::chrono::high_resolution_clock::now()};
+	    std::cout << ">recv_until_terminator: ";
 #endif
 	    auto response = recv_until_terminator(std::string(http::terminator));
 #ifdef NCW_DEBUG
 	    auto e {std::chrono::high_resolution_clock::now()};
 	    std::chrono::duration<double, std::milli> ms {e - s};
-	    std::cout << ">recv_until_terminator: " << ms.count() << std::endl;
-	    s = std::chrono::high_resolution_clock::now();
+	    std::cout << ms.count() << std::endl;
 #endif
 	    auto [headers, status] = parse_headers_status(response);
-#ifdef NCW_DEBUG
-	    e = std::chrono::high_resolution_clock::now();
-	    ms = e - s;
-	    std::cout << ">parse_headers_status: " << ms.count() << std::endl;
-#endif
 	    if(status == 0) throw std::runtime_error("No HTTP status code found");
 	    if(method_ == Method::head || method_ == Method::options)
 		return Response{"", status, headers};

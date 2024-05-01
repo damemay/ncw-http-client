@@ -37,6 +37,5 @@ int main(int argc, char** argv) {
 
 # Planned features
 
-- Fixes
 - URL encoding POST and GET parameters
 - Basic Auth
